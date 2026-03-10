@@ -2,36 +2,77 @@ Credit Risk Dataset -
 https://www.kaggle.com/datasets/rikdifos/credit-card-approval-prediction
 This dataset contains columns simulating credit bureau data
 
-data.info()
-data.dtypes
+
+* credit_risk_dataset.csv -
+
+변수명 (Feature),설명,상세 의미
+person_age,나이,대출 신청자의 나이입니다.
+person_income,연소득,신청자가 1년 동안 버는 총소득입니다.
+person_home_ownership,주거 형태,"집을 소유하고 있는지 여부입니다. (예: 자가 소유, 전/월세, 담보대출 낀 자가 등)"
+person_emp_length,근속 연수,현재 직장에서 일한 기간(년 수)입니다. 직업의 안정성을 보여줍니다.
+
+변수명 (Feature),설명,상세 의미
+loan_intent,대출 목적,"돈을 빌리는 이유입니다. (예: 학자금, 의료비, 창업, 주택 구입 등)"
+loan_grade,대출 등급,금융기관에서 평가한 대출 등급입니다. (보통 A등급이 제일 좋고 밑으로 갈수록 위험함)
+loan_amnt,대출 금액,빌리고자 하는 총액수입니다.
+loan_int_rate,이자율,대출에 적용되는 금리(%)입니다.
+loan_percent_income,소득 대비 대출 비율,내 연소득에서 대출금이 차지하는 비율입니다. (대출금 / 연소득)
+
+변수명 (Feature),설명,상세 의미
+cb_person_default_on_file,과거 채무 불이행 기록,과거에 대출을 갚지 못해 연체나 부도를 낸 이력이 있는지 여부입니다.
+cb_preson_cred_hist_length,신용 거래 이력 기간,신용카드 사용이나 대출 등 금융권과 신용 거래를 해온 총 기간입니다.
+
+**loan_status,대출 상태 (핵심),"0은 정상 상환, 1은 채무 불이행(연체/부도)을 뜻합니다. 보통 데이터 분석 시 이 값을 맞추는 것이 목표가 됩니다."**
+
+----------------------------
+
+========== [ 1. 데이터 미리보기 (head) ] ==========
+   person_age  person_income person_home_ownership  person_emp_length  ... loan_status loan_percent_income  cb_person_default_on_file  cb_person_cred_hist_length
+0          22          59000                  RENT              123.0  ...           1                0.59                          Y                           3
+1          21           9600                   OWN                5.0  ...           0                0.10                          N                           2
+2          25           9600              MORTGAGE                1.0  ...           1                0.57                          N                           3
+3          23          65500                  RENT                4.0  ...           1                0.53                          N                           2
+4          24          54400                  RENT                8.0  ...           1                0.55                          Y                           4
+
+[5 rows x 12 columns]
 
 
-관계형 데이터베이스에서 두 테이블을 기본키(Primary Key)인 ID 기준으로 묶고(Join) 집계(Group By)하는 로직을 Pandas 코드로 짜달라고 명확하게 요구하는 것이 핵심입니다. 아래처럼 요청해 보세요.
+========== [ 2. 데이터 기본 정보 (info) ] ==========
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 32581 entries, 0 to 32580
+Data columns (total 12 columns):
+ #   Column                      Non-Null Count  Dtype
+---  ------                      --------------  -----
+ 0   person_age                  32581 non-null  int64
+ 1   person_income               32581 non-null  int64
+ 2   person_home_ownership       32581 non-null  object
+ 3   person_emp_length           31686 non-null  float64
+ 4   loan_intent                 32581 non-null  object
+ 5   loan_grade                  32581 non-null  object
+ 6   loan_amnt                   32581 non-null  int64
+ 7   loan_int_rate               29465 non-null  float64
+ 8   loan_status                 32581 non-null  int64
+ 9   loan_percent_income         32581 non-null  float64
+ 10  cb_person_default_on_file   32581 non-null  object
+ 11  cb_person_cred_hist_length  32581 non-null  int64
+dtypes: float64(3), int64(5), object(4)
+memory usage: 3.0+ MB
 
-"나는 지금 LightGBM으로 신용카드 발급 승인 예측 모델을 만들려고 해.
-두 개의 CSV 파일이 있어.
 
-application_record.csv (고객 정보)
-
-info/dtypes: [여기에 붙여넣기]
-
-head: [여기에 붙여넣기]
-
-credit_record.csv (월별 결제/연체 이력)
-
-info/dtypes: [여기에 붙여넣기]
-
-head: [여기에 붙여넣기]
-
-[요구사항]
-credit_record.csv의 STATUS 컬럼은 다음과 같은 의미야.
-(C: 완납, X: 대출없음, 0: 1~29일 연체, 1: 30~59일 연체, 2: 60~89일 연체, 3: 90~119일 연체, 4: 120~149일 연체, 5: 150일 이상 연체)
-
-credit_record 데이터를 ID 기준으로 GroupBy 해줘.
-
-해당 ID의 기록 중 STATUS가 '2', '3', '4', '5' 중 하나라도 존재하면 타겟 변수 Y = 1(불량)로 설정하고, 한 번도 없었다면 Y = 0(우량)으로 라벨링하는 파생 변수(타겟)를 만들어줘.
-
-생성된 타겟 변수를 application_record.csv 데이터에 ID를 기준으로 Left Join 해서 하나의 완성된 DataFrame으로 만드는 Pandas 코드를 작성해 줘."
+========== [ 3. 데이터 타입 (dtypes) ] ==========
+person_age                      int64
+person_income                   int64
+person_home_ownership          object
+person_emp_length             float64
+loan_intent                    object
+loan_grade                     object
+loan_amnt                       int64
+loan_int_rate                 float64
+loan_status                     int64
+loan_percent_income           float64
+cb_person_default_on_file      object
+cb_person_cred_hist_length      int64
+dtype: object
 
 
 
