@@ -3,7 +3,7 @@ https://www.kaggle.com/datasets/rikdifos/credit-card-approval-prediction
 This dataset contains columns simulating credit bureau data
 
 
-* credit_risk_dataset.csv -
+* credit_risk_dataset_v2.csv -
 
 변수명 (Feature),설명,상세 의미
 person_age,나이,대출 신청자의 나이입니다.
