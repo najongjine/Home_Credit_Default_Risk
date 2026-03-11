@@ -203,6 +203,42 @@ def preprocess_step4(df):
     print("======================================================")
     return model
 
+def preprocess_step5(model, df, drop_ratio=0.1):
+    """
+    LightGBM 최적화 5단계 전처리 파이프라인
+    - 5단계: 학습 후 중요도 분석 및 변수 최종 제거
+    """
+    print(f"\n========== [ 5단계: 중요도 분석 및 변수 제거 ] ==========")
+    
+    # 1. 특성 중요도 추출 (Gain 기준: 모델의 예측력에 기여한 정도)
+    # LightGBM의 feature_importance(importance_type='gain')은 각 특성이 트리의 분할에 기여한 총 이득을 의미합니다.
+    importance = model.feature_importance(importance_type='gain')
+    feature_names = model.feature_name()
+    
+    # 중요도 데이터프레임 생성 및 정렬
+    feature_imp_df = pd.DataFrame({'feature': feature_names, 'importance': importance})
+    feature_imp_df = feature_imp_df.sort_values(by='importance', ascending=False).reset_index(drop=True)
+    
+    print(f"전체 변수 개수: {len(feature_imp_df)}")
+    
+    # 2. 하위 n% 변수 식별
+    num_to_drop = int(len(feature_imp_df) * drop_ratio)
+    if num_to_drop == 0 and len(feature_imp_df) > 0:
+        num_to_drop = 1 # 최소 1개는 제거 시도
+        
+    features_to_drop = feature_imp_df.tail(num_to_drop)['feature'].tolist()
+    
+    print(f"제거 대상 변수 (하위 {drop_ratio*100:.0f}%): {features_to_drop}")
+    
+    # 3. 변수 제거
+    df_filtered = df.drop(columns=features_to_drop)
+    
+    print(f"\n변수 제거 전 컬럼 수: {df.shape[1]}")
+    print(f"변수 제거 후 컬럼 수: {df_filtered.shape[1]}")
+    print("======================================================")
+    
+    return df_filtered, features_to_drop
+
 if __name__ == "__main__":
     # 데이터 로드
     file_path = "credit_risk_dataset_v2.csv"
@@ -218,10 +254,23 @@ if __name__ == "__main__":
         # 3단계 전처리 파이프라인 수행 (파생 변수 및 다중공선성 처리)
         df_step3_done = preprocess_step3(df_step2_done)
         
-        # 4단계 전처리 파이프라인 수행 (모델 학습 및 튜닝)
-        model = preprocess_step4(df_step3_done)
+        # 4단계 전처리 파이프라인 수행 (1차 모델 학습)
+        print("\n>>> [1차 학습 시작] 변수 중요도 파악을 위한 초기 모델 훈련")
+        initial_model = preprocess_step4(df_step3_done)
         
-        print("\n[전체 파이프라인 완료]")
+        if initial_model:
+            # 5단계 전처리 파이프라인 수행 (변수 중요도 분석 및 하위 10~20% 제거)
+            # 여기서는 하위 15% 정도를 제거해봅니다.
+            df_final_features = preprocess_step5(initial_model, df_step3_done, drop_ratio=0.15)
+            filtered_df, dropped_cols = df_final_features
+            
+            # 4단계로 다시 돌아가 최종 모델 훈련
+            print("\n>>> [최종 학습 시작] 선별된 '진짜 중요한 변수'들로 최종 모델 훈련")
+            final_model = preprocess_step4(filtered_df)
+            
+            print("\n[전체 파이프라인 완료]")
+            if initial_model and final_model:
+                print(f"최종적으로 {len(dropped_cols)}개의 저효율 변수가 제거되었습니다.")
         
     except FileNotFoundError:
         print(f"오류: '{file_path}' 파일을 찾을 수 없습니다. 경로를 확인해주세요.")
